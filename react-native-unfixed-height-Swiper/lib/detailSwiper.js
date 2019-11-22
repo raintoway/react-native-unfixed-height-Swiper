@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-import { Animated,View, Text,Dimensions,PanResponder,UIManager,findNodeHandle} from 'react-native';
-
+import { View, Text,Dimensions,PanResponder,UIManager,findNodeHandle,Animated} from 'react-native';
 
 export default class Test extends Component {
   // 高度随内容变化的剧情滑板 
@@ -174,8 +173,7 @@ export default class Test extends Component {
                   });
 
               });
-
-            
+ 
             this._moveBox.setNativeProps({
               style:{height:this.state.secHeight}
             })
@@ -298,7 +296,7 @@ export default class Test extends Component {
                       duration: 0,              // 让动画持续一段时间
                       useNativeDriver:true
                     }
-                  ).start();
+                  ).start();                  
                   this.setState({secIndex:((this.state.index-2)+this.state.detailPlotNumber)%this.state.detailPlotNumber,whichBox:0,index:(this.state.index-1+this.state.detailPlotNumber)%this.state.detailPlotNumber})
                   this._detailPlot0.setNativeProps({
                     style:{left:0,translateX:0}
@@ -343,7 +341,7 @@ export default class Test extends Component {
                       useNativeDriver:true
                     }
                   ).start();
-                  this.setState({secIndex:(this.state.index+2)%this.state.detailPlotNumber,whichBox:1,index:(this.state.index+1)%this.state.detailPlotNumber})
+                  this.setState({zeroIndex:((this.state.index-2)+this.state.detailPlotNumber)%this.state.detailPlotNumber,whichBox:1,index:(this.state.index-1+this.state.detailPlotNumber)%this.state.detailPlotNumber})
                   this._detailPlot0.setNativeProps({
                     style:{left:-this.state.width,translateX:0}
                   })
@@ -384,7 +382,7 @@ export default class Test extends Component {
                       useNativeDriver:true
                     }
                   ).start();
-                  this.setState({secIndex:(this.state.index+2)%this.state.detailPlotNumber,whichBox:1,index:(this.state.index+1)%this.state.detailPlotNumber})
+                  this.setState({firstIndex:((this.state.index-2)+this.state.detailPlotNumber)%this.state.detailPlotNumber,whichBox:2,index:(this.state.index-1+this.state.detailPlotNumber)%this.state.detailPlotNumber})
                   this._detailPlot0.setNativeProps({
                     style:{left:this.state.width,translateX:0}
                   })
@@ -435,6 +433,7 @@ export default class Test extends Component {
       }
   }
   })
+
   constructor(props) {
     super(props);
     this.state = {
@@ -455,60 +454,93 @@ export default class Test extends Component {
       zeroIndex:2,
       firstIndex:0,
       secIndex:1,
-      detailFlag:true,
       tempFlag:true,
+
+      // 分集剧情组件
+      width:Dimensions.get('window').width,
+
       // 动画参数
       detailAnim: new Animated.Value(0),
+
+
     };
   }
+  shouldComponentUpdate(nextProps, nextState) {
+    if(this.state.detailPlots!==nextProps.detailPlots){
+      return true
+    }
+    if(this.state.detailPlotNumber!==nextProps.detailPlotNumber){
+      return true
+    }
+    if(this.state.detailPlots!==nextState.detailPlots){
+      return true
+    }
+    if(this.state.detailPlotNumber!==nextState.detailPlotNumber){
+      return true
+    }
+    if(this.state.zeroIndex!==nextState.zeroIndex){
+      return true
+    }
+    if(this.state.firstIndex!==nextState.firstIndex){
+      return true
+    }
+    if(this.state.secIndex!==nextState.secIndex){
+      return true
+    }
+    if(this.state.tempFlag!==nextState.tempFlag){
+      return true
+    }
+    return false;
+  }
+
   componentWillReceiveProps =  (nextProps)=>{
-    // 由于父组件刷新自身都会将传递进来的参数更新(哪怕相同)  这个函数就会执行多次
-    if (nextProps.detailPlotNumber!=this.state.detailPlotNumber) {
-      this.setState({detailPlotNumber:nextProps.detailPlotNumber,detailPlots:[...nextProps.detailPlots]})
+    if (nextProps.detailPlotNumber!==this.state.detailPlotNumber) {
+      this.setState({detailPlotNumber:nextProps.detailPlotNumber,detailPlots:nextProps.detailPlots,tempFlag:true})
     }
    }
   render() {
     return (
-      <View {...this.pan7.panHandlers} >
-      {this.state.detailFlag?
-          <Animated.View  ref={ref => this._moveBox = ref} style={{height:80,width:'100%',position:'relative'}}>
-          
-           {/* 剧情第0个板子 */}
-          <Animated.View  ref={ref => this._detailPlot0 = ref}  style={{borderRadius:6,translateX:this.state.detailAnim,paddingLeft:10,paddingVertical:10,width:'100%',backgroundColor:'#FFD39B',position:'absolute',left:-this.state.width}} onLayout={() => {
-            let handle0 = findNodeHandle(this._detailPlot0);
-            UIManager.measure(handle0,(x, y, width, height, pageX, pageY) => {
-                this.setState({zeroHeight:height})
-                })
-              }} >
-              <Text style={{fontSize:17,lineHeight:20}}>第{this.state.detailPlots[this.state.zeroIndex].index+1}级   {this.state.detailPlots[this.state.zeroIndex].name}</Text>
-              <Text  style={{fontSize:16}}>{this.state.detailPlots[this.state.zeroIndex].contents}</Text>
-          </Animated.View>
-          
-           {/* 剧情第一个板子 */}
-          <Animated.View  ref={ref => this._detailPlot1 = ref}  style={{borderRadius:6,translateX:this.state.detailAnim,paddingLeft:10,paddingVertical:10,width:'100%',backgroundColor:'#FFD39B',position:'absolute',left:0}} onLayout={() => {
-            let handle = findNodeHandle(this._detailPlot1);
-            UIManager.measure(handle,(x, y, width, height, pageX, pageY) => {
-                this.state.tempFlag?this._moveBox.setNativeProps({style:{height:height}}):null
-                this.setState({firstHeight:height,tempFlag:false})
-                })
-              }} >
-              <Text  style={{fontSize:17,lineHeight:20}}>第{this.state.detailPlots[this.state.firstIndex].index+1}级   {this.state.detailPlots[this.state.firstIndex].name}</Text>
-              <Text style={{fontSize:16}}>{this.state.detailPlots[this.state.firstIndex].contents}</Text>
-          </Animated.View>
+      <Animated.View {...this.pan7.panHandlers} style={{translateY:this.state.moveYTwoAnime}}>
+          <Animated.View  ref={ref => this._moveBox = ref} style={{width:'100%',position:'relative'}}>
 
-           {/* 剧情第二个板子 */}
-          <Animated.View  ref={ref => this._detailPlot2 = ref}  style={{borderRadius:6,translateX:this.state.detailAnim,paddingLeft:10,paddingVertical:10,width:'100%',backgroundColor:'#FFD39B',position:'absolute',left:this.state.width}} onLayout={() => {
-            let handle2 = findNodeHandle(this._detailPlot2);
-            UIManager.measure(handle2,(x, y, width, height, pageX, pageY) => {
-                this.setState({secHeight:height})
-            })
-          }} >
-              <Text  style={{fontSize:17,lineHeight:20}}>第{this.state.detailPlots[this.state.secIndex].index+1}级   {this.state.detailPlots[this.state.secIndex].name}</Text>
-              <Text style={{fontSize:16}}>{this.state.detailPlots[this.state.secIndex].contents}</Text>
-          </Animated.View>
-          </Animated.View >
-      :<View style={{width:'100%',height:200,backgroundColor:'#FFD39B'}}></View>}
-      </View>
+              {/* 剧情第0个板子 */}
+              <Animated.View  ref={ref => this._detailPlot0 = ref}  style={{borderRadius:6,translateX:this.state.detailAnim,paddingLeft:10,paddingVertical:10,width:'100%',backgroundColor:'#FFD39B',position:'absolute',left:-this.state.width}} onLayout={() => {
+                let handle0 = findNodeHandle(this._detailPlot0);
+                UIManager.measure(handle0,(x, y, width, height, pageX, pageY) => {
+                    this.setState({zeroHeight:height})
+                    })
+                  }} >
+                  <Text style={{fontSize:17,lineHeight:20}}>第{this.state.detailPlots[this.state.zeroIndex].index+1}级   {this.state.detailPlots[this.state.zeroIndex].name}</Text>
+                  <Text  style={{fontSize:16}}>{this.state.detailPlots[this.state.zeroIndex].contents}</Text>
+              </Animated.View>
+              
+              {/* 剧情第一个板子 */}
+              <Animated.View  ref={ref => this._detailPlot1 = ref}  style={{borderRadius:6,translateX:this.state.detailAnim,paddingLeft:10,paddingVertical:10,width:'100%',backgroundColor:'#FFD39B',left:0}} onLayout={() => {
+                  let handle = findNodeHandle(this._detailPlot1);
+                  UIManager.measure(handle,(x, y, width, height, pageX, pageY) => {
+                      if (this.state.tempFlag){
+                        this._moveBox.setNativeProps({style:{height:height}})
+                        this._detailPlot1.setNativeProps({style:{position:'absolute'}})
+                      }
+                      this.setState({firstHeight:height,tempFlag:false})})
+                      }} >
+                    <Text  style={{fontSize:17,lineHeight:20}}>第{this.state.detailPlots[this.state.firstIndex].index+1}级   {this.state.detailPlots[this.state.firstIndex].name}</Text>
+                    <Text style={{fontSize:16}}>{this.state.detailPlots[this.state.firstIndex].contents}</Text>
+              </Animated.View>
+
+              {/* 剧情第二个板子 */}
+              <Animated.View  ref={ref => this._detailPlot2 = ref}  style={{borderRadius:6,translateX:this.state.detailAnim,paddingLeft:10,paddingVertical:10,width:'100%',backgroundColor:'#FFD39B',position:'absolute',left:this.state.width}} onLayout={() => {
+                    let handle2 = findNodeHandle(this._detailPlot2);
+                    UIManager.measure(handle2,(x, y, width, height, pageX, pageY) => {
+                        this.setState({secHeight:height})
+                    })
+                    }}>
+                      <Text  style={{fontSize:17,lineHeight:20}}>第{this.state.detailPlots[this.state.secIndex].index+1}级   {this.state.detailPlots[this.state.secIndex].name}</Text>
+                      <Text style={{fontSize:16}}>{this.state.detailPlots[this.state.secIndex].contents}</Text>
+                  </Animated.View>
+              </Animated.View >
+      
+      </Animated.View>
     );
   }
   
